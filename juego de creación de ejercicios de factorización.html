@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>FACTY: Identifica el Caso</title>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
+    .header { background-color: #bfc293; padding: 20px; }
+    .header img { width: 150px; }
+    .pregunta { font-size: 24px; margin: 20px; }
+    .opciones { display: flex; justify-content: center; gap: 15px; }
+    .opcion { padding: 10px 20px; background: #f0f0f0; cursor: pointer; border-radius: 5px; }
+    .opcion:hover { background: #e0e0e0; }
+    #timer { font-size: 18px; color: red; margin: 10px; }
+    #score { font-size: 18px; margin: 20px; }
+    #reinicio { margin-top: 20px; padding: 10px 20px; background: #886b8a; color: white; border: none; cursor: pointer; border-radius: 5px; }
+    #reinicio:hover { background: #668a80; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="FACTY.png" alt="FACTY: Tu Asistente de Factorización">
+    <h1>FACTY: ¡Identifica el Caso de Factorización!</h1>
+  </div>
+  <div id="quiz">
+    <div class="pregunta" id="pregunta">Cargando ejercicio...</div>
+    <div id="timer">Tiempo restante: 10 segundos</div>
+    <div class="opciones" id="opciones"></div>
+    <div id="feedback"></div>
+    <div id="score">Puntuación: 0 correctos, 0 incorrectos</div>
+    <button id="reinicio" onclick="reiniciarJuego()">Reiniciar</button>
+  </div>
+
+  <script>
+    // Banco de ejercicios
+    const ejercicios = [
+      { ejercicio: "\\(x^2 - 16\\)", caso: "Diferencia de cuadrados" },
+      { ejercicio: "\\(x^2 + 2x + 1\\)", caso: "Trinomio cuadrado perfecto" },
+      { ejercicio: "\\(2x^2 + 4x\\)", caso: "Factor común" },
+      { ejercicio: "\\(x^3 - 8\\)", caso: "Suma o diferencia de cubos" },
+      { ejercicio: "\\(x^2 + 5x + 6\\)", caso: "Trinomio de la forma x^2 + bx + c" }
+    ];
+
+    const opciones = [
+      "Factor común",
+      "Diferencia de cuadrados",
+      "Trinomio cuadrado perfecto",
+      "Suma o diferencia de cubos",
+      "Trinomio de la forma x^2 + bx + c"
+    ];
+
+    let ejercicioActual = 0;
+    let puntuacionCorrecta = 0;
+    let puntuacionIncorrecta = 0;
+    let tiempo = 10;
+    let intervalo;
+
+    // Mostrar un ejercicio
+    function mostrarEjercicio() {
+      if (ejercicioActual >= ejercicios.length) {
+        mostrarResultadoFinal();
+        return;
+      }
+
+      const ejercicio = ejercicios[ejercicioActual];
+      document.getElementById("pregunta").innerHTML = `¿Qué caso corresponde a ${ejercicio.ejercicio}?`;
+      const opcionesContainer = document.getElementById("opciones");
+      opcionesContainer.innerHTML = "";
+      opciones.forEach((opcion) => {
+        const button = document.createElement("div");
+        button.className = "opcion";
+        button.textContent = opcion;
+        button.onclick = () => evaluarRespuesta(opcion);
+        opcionesContainer.appendChild(button);
+      });
+
+      tiempo = 10;
+      document.getElementById("timer").textContent = `Tiempo restante: ${tiempo} segundos`;
+      clearInterval(intervalo);
+      intervalo = setInterval(() => {
+        tiempo--;
+        document.getElementById("timer").textContent = `Tiempo restante: ${tiempo} segundos`;
+        if (tiempo <= 0) {
+          clearInterval(intervalo);
+          puntuacionIncorrecta++;
+          actualizarPuntuacion();
+          ejercicioActual++;
+          mostrarEjercicio();
+        }
+      }, 1000);
+      MathJax.typeset();
+    }
+
+    // Evaluar la respuesta
+    function evaluarRespuesta(respuesta) {
+      clearInterval(intervalo);
+      const ejercicio = ejercicios[ejercicioActual];
+      if (respuesta === ejercicio.caso) {
+        document.getElementById("feedback").innerHTML = '<p style="color: green;">¡Correcto!</p>';
+        puntuacionCorrecta++;
+      } else {
+        document.getElementById("feedback").innerHTML = '<p style="color: red;">Incorrecto. Revisa las características del caso.</p>';
+        puntuacionIncorrecta++;
+      }
+      actualizarPuntuacion();
+      ejercicioActual++;
+      setTimeout(() => {
+        document.getElementById("feedback").innerHTML = "";
+        mostrarEjercicio();
+      }, 1000);
+    }
+
+    // Actualizar puntuación
+    function actualizarPuntuacion() {
+      document.getElementById("score").textContent = `Puntuación: ${puntuacionCorrecta} correctos, ${puntuacionIncorrecta} incorrectos`;
+    }
+
+    // Mostrar retroalimentación final
+    function mostrarResultadoFinal() {
+      let mensajeFinal = "";
+
+      if (puntuacionCorrecta === 0) {
+        mensajeFinal = "Sospecho que ¿te estallaron las neuronas? 😅 No pasa nada, todos empezamos desde cero. ¡Inténtalo de nuevo, FACTY está aquí para ayudarte!";
+      } else if (puntuacionCorrecta <= 2) {
+        mensajeFinal = "¡Ánimo! Parece que algunos casos te resultaron complicados. No te preocupes, repasa las características de cada caso y verás cómo mejoras.";
+      } else if (puntuacionCorrecta <= 4) {
+        mensajeFinal = "¡Vas por buen camino! Solo falta afinar algunos detalles. Sigue practicando, estás a punto de dominar la factorización.";
+      } else {
+        mensajeFinal = "¡Increíble trabajo! Has identificado todos los casos correctamente. ¡FACTY está muy orgulloso de ti! Sigue así.";
+      }
+
+      document.getElementById("pregunta").textContent = mensajeFinal;
+      document.getElementById("timer").textContent = "";
+      document.getElementById("opciones").innerHTML = "";
+      clearInterval(intervalo);
+    }
+
+    // Reiniciar el juego
+    function reiniciarJuego() {
+      ejercicioActual = 0;
+      puntuacionCorrecta = 0;
+      puntuacionIncorrecta = 0;
+      actualizarPuntuacion();
+      mostrarEjercicio();
+    }
+
+    // Iniciar el juego
+    mostrarEjercicio();
+  </script>
+</body>
+</html>
+
